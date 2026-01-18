@@ -60,3 +60,7 @@ cookies*.txt
 scripts/*.bak*
 .env
 node_modules/
+cookies*.txt
+scripts/*.bak*
+.env
+node_modules/
