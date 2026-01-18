@@ -9,7 +9,13 @@ export class UsersService {
 
   async findAll() {
     return this.prisma.user.findMany({
-      select: { id: true, email: true, name: true, roleId: true, createdAt: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        roleId: true,
+        createdAt: true,
+      },
     });
   }
 
@@ -29,7 +35,13 @@ export class UsersService {
         password: hashed,
         role: { connect: { id: data.roleId } },
       },
-      select: { id: true, email: true, name: true, roleId: true, createdAt: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        roleId: true,
+        createdAt: true,
+      },
     });
   }
 }

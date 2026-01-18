@@ -56,3 +56,19 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /generated/prisma
+cookies*.txt
+scripts/*.bak*
+.env
+node_modules/
+cookies*.txt
+scripts/*.bak*
+.env
+node_modules/
+cookies*.txt
+*.bak*
+.env
+node_modules/
+cookies*.txt
+*.bak*
+.env
+node_modules/

@@ -1,33 +1,33 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { UsersService } from '../users/users.service';
-import * as bcrypt from 'bcryptjs';
+// src/auth/auth.service.ts
+import { Injectable } from '@nestjs/common';
+import * as crypto from 'crypto';
+
+type LoginOptions = {
+  ip?: string;
+  userAgent?: string;
+};
+
+function toStringSafe(v: unknown): string {
+  if (typeof v === 'string') return v;
+  if (v === null || v === undefined) return '';
+  return String(v);
+}
 
 @Injectable()
 export class AuthService {
-  constructor(private usersService: UsersService, private jwtService: JwtService) {}
+  async login(dto: { email: string; password: string }, opts?: LoginOptions) {
+    const email = toStringSafe(dto.email);
+    const password = toStringSafe(dto.password);
 
-  async validateUser(email: string, plainPassword: string) {
-    const user = await this.usersService.findByEmail(email);
-    if (!user) return null;
-    const matches = await bcrypt.compare(plainPassword, user.password);
-    if (!matches) return null;
-    // retire le password avant de renvoyer
-    // @ts-ignore
-    const { password, ...safeUser } = user;
-    return safeUser;
-  }
+    const secret = toStringSafe(process.env.AUTH_SECRET ?? process.env.JWT_SECRET);
+    const hmac = crypto.createHmac('sha256', Buffer.from(secret));
+    hmac.update(password);
+    const token = hmac.digest('hex');
 
-  async login(user: { id: number; email: string; roleId?: number }) {
-    const payload = { sub: user.id, email: user.email, roleId: user.roleId };
     return {
-      access_token: this.jwtService.sign(payload),
+      accessToken: token,
+      email,
+      meta: { ip: opts?.ip ?? '', userAgent: opts?.userAgent ?? '' },
     };
-  }
-
-  async loginWithCredentials(email: string, password: string) {
-    const user = await this.validateUser(email, password);
-    if (!user) throw new UnauthorizedException('Invalid credentials');
-    return this.login(user as any);
   }
 }
