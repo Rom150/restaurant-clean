@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
+
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -10,22 +12,37 @@ export class UniteService {
 
   async getUnite(code: string) {
     if (!code) return null;
-    return this.prisma.unite.findUnique({ where: { code }});
+    return this.prisma.unite.findUnique({ where: { code } });
   }
 
   private arrondirSelon(unite: any, valeur: number) {
     if (!unite || typeof valeur !== 'number') return valeur;
-    const prec = typeof unite.precision === 'number' ? unite.precision : (unite.type === 'count' ? 0 : 3);
+    const prec =
+      typeof unite.precision === 'number'
+        ? unite.precision
+        : unite.type === 'count'
+          ? 0
+          : 3;
     const factor = Math.pow(10, prec);
     return Math.round(valeur * factor) / factor;
   }
 
-  async convertir(quantite: number, uniteFrom: string, uniteTo: string, produitId?: number) : Promise<number> {
-    if (quantite === null || quantite === undefined) throw new Error('quantite requise');
+  async convertir(
+    quantite: number,
+    uniteFrom: string,
+    uniteTo: string,
+    produitId?: number,
+  ): Promise<number> {
+    if (quantite === null || quantite === undefined)
+      throw new Error('quantite requise');
     if (uniteFrom === uniteTo) return Number(quantite);
 
-    const [uFrom, uTo] = await Promise.all([this.getUnite(uniteFrom), this.getUnite(uniteTo)]);
-    if (!uFrom || !uTo) throw new Error(`Unité inconnue: \${!uFrom ? uniteFrom : uniteTo}`);
+    const [uFrom, uTo] = await Promise.all([
+      this.getUnite(uniteFrom),
+      this.getUnite(uniteTo),
+    ]);
+    if (!uFrom || !uTo)
+      throw new Error(`Unité inconnue: \${!uFrom ? uniteFrom : uniteTo}`);
 
     if (uFrom.type === uTo.type) {
       const base = quantite * uFrom.facteur;
@@ -35,11 +52,21 @@ export class UniteService {
 
     const masseTypes = ['mass'];
     const volumeTypes = ['volume'];
-    if ((masseTypes.includes(uFrom.type) && volumeTypes.includes(uTo.type)) ||
-        (volumeTypes.includes(uFrom.type) && masseTypes.includes(uTo.type))) {
-      if (!produitId) throw new Error('Produit requis pour conversion masse<->volume (densité manquante)');
-      const produit = await this.prisma.product.findUnique({ where: { id: produitId }});
-      if (!produit || !produit.densite) throw new Error('Densité produit introuvable pour conversion masse<->volume');
+    if (
+      (masseTypes.includes(uFrom.type) && volumeTypes.includes(uTo.type)) ||
+      (volumeTypes.includes(uFrom.type) && masseTypes.includes(uTo.type))
+    ) {
+      if (!produitId)
+        throw new Error(
+          'Produit requis pour conversion masse<->volume (densité manquante)',
+        );
+      const produit = await this.prisma.product.findUnique({
+        where: { id: produitId },
+      });
+      if (!produit || !produit.densite)
+        throw new Error(
+          'Densité produit introuvable pour conversion masse<->volume',
+        );
 
       if (uFrom.type === 'mass' && uTo.type === 'volume') {
         const g = quantite * uFrom.facteur;

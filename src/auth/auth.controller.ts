@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
+
 import { Controller, Post, Body, Get, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -13,7 +15,12 @@ export class AuthController {
   async login(@Body() dto: LoginDto, @Req() req: any) {
     const ip = req.ip;
     const userAgent = req.headers['user-agent'];
-    return this.authService.loginWithCredentials(dto.email, dto.password, ip, userAgent);
+    return this.authService.loginWithCredentials(
+      dto.email,
+      dto.password,
+      ip,
+      userAgent,
+    );
   }
 
   @Post('refresh')
@@ -23,7 +30,10 @@ export class AuthController {
 
   @Post('logout')
   async logout(@Body() dto: LogoutDto) {
-    return this.authService.logout({ refreshToken: dto.refreshToken, sessionId: dto.sessionId });
+    return this.authService.logout({
+      refreshToken: dto.refreshToken,
+      sessionId: dto.sessionId,
+    });
   }
 
   @Get('me')

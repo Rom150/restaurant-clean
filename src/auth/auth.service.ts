@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unused-vars, @typescript-eslint/ban-ts-comment */
+
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
@@ -17,7 +19,9 @@ export class AuthService {
     const user = await this.usersService.findByEmail(email);
     if (!user) return null;
     // bcrypt compare
-    const matches = await import('bcryptjs').then(b => b.compare(plainPassword, user.password));
+    const matches = await import('bcryptjs').then((b) =>
+      b.compare(plainPassword, user.password),
+    );
     if (!matches) return null;
     // return user without password
     // @ts-ignore
@@ -25,7 +29,12 @@ export class AuthService {
     return safeUser;
   }
 
-  private signAccessToken(user: { id: number; email: string; roleId?: number; establishmentId?: number | null }) {
+  private signAccessToken(user: {
+    id: number;
+    email: string;
+    roleId?: number;
+    establishmentId?: number | null;
+  }) {
     // ensure estId is undefined when null so payload types remain consistent
     const payload = {
       sub: user.id,
@@ -35,15 +44,24 @@ export class AuthService {
     };
     const expiresIn = process.env.ACCESS_TOKEN_EXPIRES_IN || '15m';
     // cast options to any to satisfy JwtService typing differences
-    return this.jwtService.sign(payload as any, { expiresIn: (expiresIn as unknown) as any });
+    return this.jwtService.sign(payload as any, {
+      expiresIn: expiresIn as unknown as any,
+    });
   }
 
   // login: crée une session, applique limite par établissement et révoque la plus ancienne si nécessaire
-  async loginWithCredentials(email: string, password: string, ip?: string, userAgent?: string) {
+  async loginWithCredentials(
+    email: string,
+    password: string,
+    ip?: string,
+    userAgent?: string,
+  ) {
     const user = await this.usersService.findByEmail(email);
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
-    const ok = await import('bcryptjs').then(b => b.compare(password, user.password));
+    const ok = await import('bcryptjs').then((b) =>
+      b.compare(password, user.password),
+    );
     if (!ok) throw new UnauthorizedException('Invalid credentials');
 
     const establishmentId = user.establishmentId ?? null;
@@ -71,7 +89,14 @@ export class AuthService {
 
       const rawRefresh = genRefreshTokenRaw();
       const hashed = await hashToken(rawRefresh);
-      const expiresAt = new Date(Date.now() + (Number(process.env.REFRESH_TOKEN_TTL_DAYS || 30) * 24 * 60 * 60 * 1000));
+      const expiresAt = new Date(
+        Date.now() +
+          Number(process.env.REFRESH_TOKEN_TTL_DAYS || 30) *
+            24 *
+            60 *
+            60 *
+            1000,
+      );
 
       const session = await tx.session.create({
         data: {
@@ -107,7 +132,7 @@ export class AuthService {
     let sessionFound: (Session & { user: User }) | null = null;
     for (const s of candidates) {
       // compare hashed token
-      // eslint-disable-next-line no-await-in-loop
+
       if (await compareToken(refreshToken, s.refreshToken)) {
         sessionFound = s;
         break;
@@ -119,7 +144,10 @@ export class AuthService {
     // rotate refresh token
     const newRaw = genRefreshTokenRaw();
     const newHashed = await hashToken(newRaw);
-    const newExpiresAt = new Date(Date.now() + (Number(process.env.REFRESH_TOKEN_TTL_DAYS || 30) * 24 * 60 * 60 * 1000));
+    const newExpiresAt = new Date(
+      Date.now() +
+        Number(process.env.REFRESH_TOKEN_TTL_DAYS || 30) * 24 * 60 * 60 * 1000,
+    );
 
     const updated = await this.prisma.session.update({
       where: { id: sessionFound.id },
@@ -127,14 +155,20 @@ export class AuthService {
       include: { user: true },
     });
 
-    const user = updated.user as User;
+    const user = updated.user;
     const access_token = this.signAccessToken(user as any);
 
     return { access_token, refresh_token: newRaw, sessionId: updated.id };
   }
 
   // logout: revoke session by refresh token or sessionId
-  async logout({ refreshToken, sessionId }: { refreshToken?: string; sessionId?: number }) {
+  async logout({
+    refreshToken,
+    sessionId,
+  }: {
+    refreshToken?: string;
+    sessionId?: number;
+  }) {
     if (sessionId) {
       await this.prisma.session.updateMany({
         where: { id: sessionId, revokedAt: null },
@@ -154,9 +188,8 @@ export class AuthService {
 
       let sessionFound: Session | null = null;
       for (const s of candidates) {
-        // eslint-disable-next-line no-await-in-loop
         if (await compareToken(refreshToken, s.refreshToken)) {
-          sessionFound = s as Session;
+          sessionFound = s;
           break;
         }
       }

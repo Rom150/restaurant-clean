@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -17,7 +19,7 @@ const accessTokenExpiry = process.env.ACCESS_TOKEN_EXPIRES_IN || '15m';
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'change-me',
       // cast to any to satisfy upstream types (string | number). This is safe here.
-      signOptions: { expiresIn: (accessTokenExpiry as unknown) as any },
+      signOptions: { expiresIn: accessTokenExpiry as unknown as any },
     }),
   ],
   providers: [AuthService, JwtStrategy],

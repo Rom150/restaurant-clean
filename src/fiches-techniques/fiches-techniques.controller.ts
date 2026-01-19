@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { FichesTechniquesService } from './fiches-techniques.service';
 import { CreateFicheDto } from './dto/create-fiche.dto';
 import { UpdateFicheDto } from './dto/update-fiche.dto';
@@ -33,7 +42,13 @@ export class FichesTechniquesController {
   }
 
   @Get(':id/cout')
-  calculerCout(@Param('id') id: string, @Query('etablissementId') etablissementId?: string) {
-    return this.service.calculerCout(Number(id), etablissementId ? Number(etablissementId) : undefined);
+  calculerCout(
+    @Param('id') id: string,
+    @Query('etablissementId') etablissementId?: string,
+  ) {
+    return this.service.calculerCout(
+      Number(id),
+      etablissementId ? Number(etablissementId) : undefined,
+    );
   }
 }
