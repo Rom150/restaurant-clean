@@ -1,13 +1,12 @@
 import { Injectable } from '@nestjs/common';
-/* eslint-disable @typescript-eslint/no-var-requires */
-const merc = require('../utils/mercurialeImport');
+import { parseIngredientsFromText, validateIngredients, detectDuplicates } from '../utils/mercurialeImport';
 
 @Injectable()
 export class MercService {
   importText(text: string) {
-    const parsed = merc.parseIngredientsFromText(text || '');
-    const valid = merc.validateIngredients(parsed);
-    const { duplicates, toAdd } = merc.detectDuplicates([], valid);
+    const parsed = parseIngredientsFromText(text || '');
+    const valid = validateIngredients(parsed);
+    const { duplicates, toAdd } = detectDuplicates([], valid);
     return { parsed, valid, duplicates, toAdd };
   }
 }
