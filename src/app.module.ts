@@ -11,6 +11,8 @@ import { MercModule } from './merc/merc.module';
 import { FichesTechniquesModule } from './fiches-techniques/fiches-techniques.module';
 import { UnitesModule } from './unites/unites.module';
 
+import { InventoryModule } from './inventory/inventory.module';
+import { BilanModule } from './bilan/bilan.module';
 @Module({
   imports: [
     MercModule,
@@ -21,6 +23,8 @@ import { UnitesModule } from './unites/unites.module';
     // nos nouveaux modules métier
     FichesTechniquesModule,
     UnitesModule,
+    InventoryModule,
+    BilanModule,
   ],
   controllers: [AppController],
   providers: [AppService],

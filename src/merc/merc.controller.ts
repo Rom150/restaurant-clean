@@ -1,13 +1,23 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body } from '@nestjs/common';
 import { MercService } from './merc.service';
 
 @Controller('merc')
 export class MercController {
   constructor(private readonly mercService: MercService) {}
 
-  // POST /merc/import   Body: { "text": "contenu extrait de la mercuriale" }
+  @Get('items')
+  list() {
+    return this.mercService.listItems();
+  }
+
+  @Post('items')
+  add(@Body() body: { name: string; price: number }) {
+    return this.mercService.addItem(body.name, body.price);
+  }
+
+  // POST /merc/import Body: { text: "..." }
   @Post('import')
-  import(@Body('text') text: string) {
-    return this.mercService.importText(text);
+  importText(@Body() body: { text: string }) {
+    return { parsed: this.mercService.parseText(body.text || '') };
   }
 }
