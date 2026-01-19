@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Demo /merc/import</title>
+</head>
+<body>
+  <h1>Demo /merc/import</h1>
+  <textarea id="text" rows="6" cols="40">tomate
+pommes
+fromage</textarea>
+  <br/>
+  <button id="send">Envoyer</button>
+  <pre id="out"></pre>
+
+  <script>
+    document.getElementById('send').addEventListener('click', async () => {
+      const text = document.getElementById('text').value;
+      try {
+        const res = await fetch('http://localhost:3000/merc/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+        const json = await res.json();
+        document.getElementById('out').textContent = JSON.stringify(json, null, 2);
+      } catch (err) {
+        document.getElementById('out').textContent = 'Erreur: ' + err;
+      }
+    });
+  </script>
+</body>
+</html>
