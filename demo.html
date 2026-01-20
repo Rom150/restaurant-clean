@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Demo App — Merc / Fiches / Inventory / Bilan</title>
+  <title>Demo App — Merc / Fiches / Inventory / Bilan (imports)</title>
   <style>
     :root{--accent:#0a84ff;--bg:#f6f7fb;--card:#fff;--muted:#666}
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);margin:0;padding:18px}
@@ -22,6 +22,7 @@
     img.preview{max-width:100%;border-radius:8px;margin-top:8px;object-fit:cover;max-height:220px}
     .controls{display:flex;gap:8px;flex-wrap:wrap}
     .muted{color:var(--muted);font-size:13px;margin-top:6px}
+    .small{font-size:13px;color:#555}
   </style>
 </head>
 <body>
@@ -55,6 +56,7 @@
               <button id="quick-add">Ajouter</button>
               <button id="quick-consume" class="ghost">Consommer 1</button>
             </div>
+            <div class="small" style="margin-top:8px">Inventory CSV: une ligne par ingrédient <code>nom,qty</code></div>
           </div>
 
           <hr/>
@@ -72,19 +74,11 @@
   </div>
 
   <script>
-    // Attendre que le DOM soit prêt avant d'attacher les écouteurs
     window.addEventListener('DOMContentLoaded', () => {
       const BASE = 'http://localhost:3000';
 
-      // pages registry
-      const pages = {
-        merc: mercPage,
-        fiches: fichesPage,
-        inventory: inventoryPage,
-        bilan: bilanPage
-      };
+      const pages = { merc: mercPage, fiches: fichesPage, inventory: inventoryPage, bilan: bilanPage };
 
-      // delegation on nav -> plus robuste que attachers individuels
       const nav = document.getElementById('nav');
       nav.addEventListener('click', (e) => {
         const a = e.target.closest('a[data-page]');
@@ -92,8 +86,7 @@
         e.preventDefault();
         nav.querySelectorAll('a').forEach(x => x.classList.remove('active'));
         a.classList.add('active');
-        const page = a.dataset.page;
-        loadPage(page);
+        loadPage(a.dataset.page);
       });
 
       // quick actions
@@ -127,59 +120,98 @@
 
       document.getElementById('side-refresh-bilan').addEventListener('click', () => loadSideBilan());
 
-      // content helper
       let currentPage = 'merc';
       function setContent(html) { document.getElementById('content').innerHTML = html; }
 
-      // pages implementations
+      // Mercuriale page (with import)
       async function mercPage() {
-        setContent('<h2>Mercuriale</h2><div id="merc-list">Chargement…</div>');
+        setContent('<h2>Mercuriale</h2><div id="merc-list">Chargement…</div>' +
+          '<hr />' +
+          '<h3>Importer facture / mercuriale</h3>' +
+          '<label>Fichier texte (une ligne = item) ou coller le texte</label>' +
+          '<input id="merc-file" type="file" accept=".txt,.csv" />' +
+          '<textarea id="merc-text" rows="4" style="margin-top:8px"></textarea>' +
+          '<div style="margin-top:8px" class="controls"><button id="btn-merc-import">Importer</button></div>' +
+          '<pre id="merc-import-result">—</pre>');
+        // load list
         try {
           const res = await fetch(BASE + '/merc/items');
           const data = await res.json();
           const html = '<ul>' + data.map(i => `<li>${escapeHtml(i.name)} — ${i.price} €</li>`).join('') + '</ul>';
-          document.getElementById('merc-list').innerHTML = html + '<div style="margin-top:10px"><button id="merc-refresh" class="ghost">Rafraîchir</button></div>';
-          document.getElementById('merc-refresh').addEventListener('click', mercPage);
+          document.getElementById('merc-list').innerHTML = html;
         } catch (e) { document.getElementById('merc-list').textContent = 'Erreur: ' + e; }
+
+        // file reading
+        document.getElementById('merc-file').addEventListener('change', (ev) => {
+          const f = ev.target.files && ev.target.files[0];
+          if (!f) return;
+          const r = new FileReader();
+          r.onload = () => { document.getElementById('merc-text').value = String(r.result || ''); };
+          r.readAsText(f);
+        });
+
+        document.getElementById('btn-merc-import').addEventListener('click', async () => {
+          const text = document.getElementById('merc-text').value || '';
+          if (!text.trim()) return alert('Texte vide');
+          document.getElementById('merc-import-result').textContent = 'Import en cours…';
+          try {
+            const res = await fetch(BASE + '/merc/import', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text })
+            });
+            const j = await res.json();
+            document.getElementById('merc-import-result').textContent = JSON.stringify(j, null, 2);
+          } catch (err) { document.getElementById('merc-import-result').textContent = String(err); }
+        });
       }
 
-      function escapeHtml(s) { return String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]); }
-
+      // Fiches page (with import)
       async function fichesPage() {
-        setContent(`
-          <h2>Importer une fiche (light)</h2>
-          <label>Nom (optionnel)</label>
-          <input id="fiche-name" type="text" value="Salade demo" />
-          <label style="margin-top:8px">Texte (1 ingrédient par ligne)</label>
-          <textarea id="fiche-text" rows="6">tomate
-pommes
-fromage</textarea>
-          <div style="margin-top:8px" class="controls">
-            <button id="btn-import">Importer (texte)</button>
-            <button id="btn-import-photo" class="ghost">Importer avec photo (si backend)</button>
-          </div>
-          <label style="margin-top:12px">Résultat</label>
-          <pre id="fiche-result">—</pre>
-        `);
-        document.getElementById('btn-import').addEventListener('click', async () => {
-          const name = document.getElementById('fiche-name').value;
-          const text = document.getElementById('fiche-text').value;
+        setContent('<h2>Fiches techniques (import)</h2>' +
+          '<label>Nom fiche</label><input id="fiche-name" type="text" value="Recette demo" />' +
+          '<label style="margin-top:8px">Fichier texte (une ligne = ingrédient) ou coller le texte</label>' +
+          '<input id="fiche-file" type="file" accept=".txt,.md" />' +
+          '<textarea id="fiche-text" rows="6" style="margin-top:8px">tomate\npommes\nfromage</textarea>' +
+          '<div style="margin-top:8px" class="controls"><button id="btn-fiche-import">Importer fiche</button></div>' +
+          '<label style="margin-top:12px">Résultat</label><pre id="fiche-result">—</pre>');
+
+        document.getElementById('fiche-file').addEventListener('change', (ev) => {
+          const f = ev.target.files && ev.target.files[0];
+          if (!f) return;
+          const r = new FileReader();
+          r.onload = () => { document.getElementById('fiche-text').value = String(r.result || ''); };
+          r.readAsText(f);
+        });
+
+        document.getElementById('btn-fiche-import').addEventListener('click', async () => {
+          const name = document.getElementById('fiche-name').value || undefined;
+          const text = document.getElementById('fiche-text').value || '';
+          if (!text.trim()) return alert('Texte vide');
+          document.getElementById('fiche-result').textContent = 'Import en cours…';
           try {
             const res = await fetch(BASE + '/fiches-techniques/import', {
-              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, text })
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name, text })
             });
             const j = await res.json();
             document.getElementById('fiche-result').textContent = JSON.stringify(j, null, 2);
             loadSideBilan();
           } catch (err) { document.getElementById('fiche-result').textContent = String(err); }
         });
-        document.getElementById('btn-import-photo').addEventListener('click', () => {
-          alert('Endpoint import-photo (multipart) disponible si tu ajoutes le support Multer côté serveur.');
-        });
       }
 
+      // Inventory page (with CSV import)
       async function inventoryPage() {
-        setContent('<h2>Inventaire</h2><div id="inv-list">Chargement…</div>');
+        setContent('<h2>Inventaire</h2><div id="inv-list">Chargement…</div>' +
+          '<hr />' +
+          '<h3>Importer inventaire (CSV)</h3>' +
+          '<div class="small">Format: une ligne par ingrédient. séparateur: virgule ou tab. Exemple: <code>tomate,5</code></div>' +
+          '<input id="inv-file" type="file" accept=".csv,.txt" />' +
+          '<textarea id="inv-text" rows="6" style="margin-top:8px"></textarea>' +
+          '<div style="margin-top:8px" class="controls"><button id="btn-inv-import">Importer CSV</button></div>' +
+          '<label style="margin-top:12px">Résultat</label><pre id="inv-result">—</pre>');
+
+        // load inventory
         try {
           const res = await fetch(BASE + '/inventory');
           const data = await res.json();
@@ -191,6 +223,41 @@ fromage</textarea>
             document.getElementById('inv-list').innerHTML = html;
           }
         } catch (e) { document.getElementById('inv-list').textContent = 'Erreur: ' + e; }
+
+        document.getElementById('inv-file').addEventListener('change', (ev) => {
+          const f = ev.target.files && ev.target.files[0];
+          if (!f) return;
+          const r = new FileReader();
+          r.onload = () => { document.getElementById('inv-text').value = String(r.result || ''); };
+          r.readAsText(f);
+        });
+
+        document.getElementById('btn-inv-import').addEventListener('click', async () => {
+          const text = document.getElementById('inv-text').value || '';
+          if (!text.trim()) return alert('Texte vide');
+          document.getElementById('inv-result').textContent = 'Traitement en cours…';
+          const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+          const results = [];
+          for (const line of lines) {
+            // parse CSV simple: name,qty
+            const parts = line.split(/[,\t]+/).map(p => p.trim());
+            const name = parts[0];
+            const qty = Number(parts[1] || 1);
+            if (!name) { results.push({ line, ok: false, reason: 'no name' }); continue; }
+            try {
+              const res = await fetch(BASE + '/inventory/add', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, qty })
+              });
+              const j = await res.json();
+              results.push({ line, ok: true, resp: j });
+            } catch (err) {
+              results.push({ line, ok: false, reason: String(err) });
+            }
+          }
+          document.getElementById('inv-result').textContent = JSON.stringify(results, null, 2);
+          if (currentPage === 'inventory') loadPage('inventory');
+        });
       }
 
       async function bilanPage() {
@@ -203,6 +270,8 @@ fromage</textarea>
           document.getElementById('bilan-refresh').addEventListener('click', bilanPage);
         } catch (e) { document.getElementById('bilan-wrap').textContent = 'Erreur: ' + e; }
       }
+
+      function escapeHtml(s) { return String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]); }
 
       async function loadSideBilan() {
         try {
@@ -218,7 +287,7 @@ fromage</textarea>
         else setContent('<div>Page not found</div>');
       }
 
-      // initial load
+      // initial
       loadPage('merc');
       loadSideBilan();
     });
