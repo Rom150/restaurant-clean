@@ -10,7 +10,7 @@
     .wrap{max-width:1100px;margin:0 auto}
     header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
     h1{margin:0}
-    nav a{margin-right:12px;text-decoration:none;color:#333;padding:6px 10px;border-radius:8px}
+    nav a{margin-right:12px;text-decoration:none;color:#333;padding:6px 10px;border-radius:8px;cursor:pointer}
     nav a.active{background:var(--accent);color:#fff}
     .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
     .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(10,10,20,0.04)}
@@ -47,7 +47,6 @@
 
         <aside class="card">
           <h3>Actions rapides</h3>
-
           <div style="margin-bottom:10px">
             <label>Ajouter stock</label>
             <input id="quick-name" type="text" value="tomate" />
@@ -73,151 +72,156 @@
   </div>
 
   <script>
-    const BASE = 'http://localhost:3000';
-    const pages = {
-      merc: mercPage,
-      fiches: fichesPage,
-      inventory: inventoryPage,
-      bilan: bilanPage
-    };
+    // Attendre que le DOM soit prêt avant d'attacher les écouteurs
+    window.addEventListener('DOMContentLoaded', () => {
+      const BASE = 'http://localhost:3000';
 
-    // Navigation
-    document.querySelectorAll('#nav a').forEach(a=>{
-      a.addEventListener('click', e=>{
+      // pages registry
+      const pages = {
+        merc: mercPage,
+        fiches: fichesPage,
+        inventory: inventoryPage,
+        bilan: bilanPage
+      };
+
+      // delegation on nav -> plus robuste que attachers individuels
+      const nav = document.getElementById('nav');
+      nav.addEventListener('click', (e) => {
+        const a = e.target.closest('a[data-page]');
+        if (!a) return;
         e.preventDefault();
-        document.querySelectorAll('#nav a').forEach(x=>x.classList.remove('active'));
+        nav.querySelectorAll('a').forEach(x => x.classList.remove('active'));
         a.classList.add('active');
-        const p = a.dataset.page;
-        loadPage(p);
+        const page = a.dataset.page;
+        loadPage(page);
       });
-    });
 
-    // quick actions
-    document.getElementById('quick-add').addEventListener('click', async ()=>{
-      const name = document.getElementById('quick-name').value;
-      const qty = Number(document.getElementById('quick-qty').value || 0);
-      if(!name || qty<=0) return alert('Name and qty required');
-      try {
-        const r = await fetch(BASE + '/inventory/add', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({name, qty})
-        });
-        const j = await r.json();
-        alert('Ajouté: ' + JSON.stringify(j));
-        if(currentPage==='inventory') loadPage('inventory');
-      } catch(e){ alert(String(e)) }
-    });
-
-    document.getElementById('quick-consume').addEventListener('click', async ()=>{
-      const name = document.getElementById('quick-name').value;
-      try {
-        const r = await fetch(BASE + '/inventory/consume', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({name, qty:1})
-        });
-        const j = await r.json();
-        alert('Consommé: ' + JSON.stringify(j));
-        if(currentPage==='inventory') loadPage('inventory');
-      } catch(e){ alert(String(e)) }
-    });
-
-    document.getElementById('side-refresh-bilan').addEventListener('click', ()=> loadSideBilan());
-
-    let currentPage = 'merc';
-    function setContent(html){ document.getElementById('content').innerHTML = html; }
-
-    // pages
-    async function mercPage(){
-      setContent('<h2>Mercuriale</h2><div id="merc-list">Chargement…</div>');
-      try {
-        const res = await fetch(BASE + '/merc/items');
-        const data = await res.json();
-        const html = '<ul>' + data.map(i=>`<li>${escapeHtml(i.name)} — ${i.price} €</li>`).join('') + '</ul>';
-        document.getElementById('merc-list').innerHTML = html + '<div style="margin-top:10px"><button id="merc-refresh" class="ghost">Rafraîchir</button></div>';
-        document.getElementById('merc-refresh').addEventListener('click', mercPage);
-      } catch(e){ document.getElementById('merc-list').textContent = 'Erreur: ' + e; }
-    }
-
-    function escapeHtml(s){ return String(s).replace(/[&<>"]/g,ch=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' })[ch]); }
-
-    async function fichesPage(){
-      setContent(\`
-        <h2>Importer une fiche (light)</h2>
-        <label>Nom (optionnel)</label>
-        <input id="fiche-name" type="text" value="Salade demo" />
-        <label style="margin-top:8px">Texte (1 ingrédient par ligne)</label>
-        <textarea id="fiche-text" rows="6">tomate\\npommes\\nfromage</textarea>
-        <div style="margin-top:8px" class="controls">
-          <button id="btn-import">Importer (texte)</button>
-          <button id="btn-import-photo" class="ghost">Importer avec photo (si backend)</button>
-        </div>
-        <label style="margin-top:12px">Résultat</label>
-        <pre id="fiche-result">—</pre>
-      \`);
-      document.getElementById('btn-import').addEventListener('click', async ()=>{
-        const name = document.getElementById('fiche-name').value;
-        const text = document.getElementById('fiche-text').value;
-        const body = { name, text };
+      // quick actions
+      document.getElementById('quick-add').addEventListener('click', async () => {
+        const name = document.getElementById('quick-name').value;
+        const qty = Number(document.getElementById('quick-qty').value || 0);
+        if (!name || qty <= 0) return alert('Name and qty required');
         try {
-          const res = await fetch(BASE + '/fiches-techniques/import', {
-            method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+          const r = await fetch(BASE + '/inventory/add', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, qty })
           });
+          const j = await r.json();
+          alert('Ajouté: ' + JSON.stringify(j));
+          if (currentPage === 'inventory') loadPage('inventory');
+        } catch (err) { alert(String(err)); }
+      });
+
+      document.getElementById('quick-consume').addEventListener('click', async () => {
+        const name = document.getElementById('quick-name').value;
+        try {
+          const r = await fetch(BASE + '/inventory/consume', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, qty: 1 })
+          });
+          const j = await r.json();
+          alert('Consommé: ' + JSON.stringify(j));
+          if (currentPage === 'inventory') loadPage('inventory');
+        } catch (err) { alert(String(err)); }
+      });
+
+      document.getElementById('side-refresh-bilan').addEventListener('click', () => loadSideBilan());
+
+      // content helper
+      let currentPage = 'merc';
+      function setContent(html) { document.getElementById('content').innerHTML = html; }
+
+      // pages implementations
+      async function mercPage() {
+        setContent('<h2>Mercuriale</h2><div id="merc-list">Chargement…</div>');
+        try {
+          const res = await fetch(BASE + '/merc/items');
+          const data = await res.json();
+          const html = '<ul>' + data.map(i => `<li>${escapeHtml(i.name)} — ${i.price} €</li>`).join('') + '</ul>';
+          document.getElementById('merc-list').innerHTML = html + '<div style="margin-top:10px"><button id="merc-refresh" class="ghost">Rafraîchir</button></div>';
+          document.getElementById('merc-refresh').addEventListener('click', mercPage);
+        } catch (e) { document.getElementById('merc-list').textContent = 'Erreur: ' + e; }
+      }
+
+      function escapeHtml(s) { return String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]); }
+
+      async function fichesPage() {
+        setContent(`
+          <h2>Importer une fiche (light)</h2>
+          <label>Nom (optionnel)</label>
+          <input id="fiche-name" type="text" value="Salade demo" />
+          <label style="margin-top:8px">Texte (1 ingrédient par ligne)</label>
+          <textarea id="fiche-text" rows="6">tomate
+pommes
+fromage</textarea>
+          <div style="margin-top:8px" class="controls">
+            <button id="btn-import">Importer (texte)</button>
+            <button id="btn-import-photo" class="ghost">Importer avec photo (si backend)</button>
+          </div>
+          <label style="margin-top:12px">Résultat</label>
+          <pre id="fiche-result">—</pre>
+        `);
+        document.getElementById('btn-import').addEventListener('click', async () => {
+          const name = document.getElementById('fiche-name').value;
+          const text = document.getElementById('fiche-text').value;
+          try {
+            const res = await fetch(BASE + '/fiches-techniques/import', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, text })
+            });
+            const j = await res.json();
+            document.getElementById('fiche-result').textContent = JSON.stringify(j, null, 2);
+            loadSideBilan();
+          } catch (err) { document.getElementById('fiche-result').textContent = String(err); }
+        });
+        document.getElementById('btn-import-photo').addEventListener('click', () => {
+          alert('Endpoint import-photo (multipart) disponible si tu ajoutes le support Multer côté serveur.');
+        });
+      }
+
+      async function inventoryPage() {
+        setContent('<h2>Inventaire</h2><div id="inv-list">Chargement…</div>');
+        try {
+          const res = await fetch(BASE + '/inventory');
+          const data = await res.json();
+          if (!Array.isArray(data) || data.length === 0) document.getElementById('inv-list').innerHTML = '<div>Inventaire vide</div>';
+          else {
+            const html = '<table style="width:100%;border-collapse:collapse"><thead><tr><th>Nom</th><th>Qty</th></tr></thead><tbody>' +
+              data.map(it => `<tr><td style="padding:6px;border-top:1px solid #eee">${escapeHtml(it.name)}</td><td style="padding:6px;border-top:1px solid #eee">${it.qty}</td></tr>`).join('') +
+              '</tbody></table>';
+            document.getElementById('inv-list').innerHTML = html;
+          }
+        } catch (e) { document.getElementById('inv-list').textContent = 'Erreur: ' + e; }
+      }
+
+      async function bilanPage() {
+        setContent('<h2>Bilan</h2><div id="bilan-wrap">Chargement…</div>');
+        try {
+          const res = await fetch(BASE + '/bilan/summary');
+          const data = await res.json();
+          document.getElementById('bilan-wrap').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+          document.getElementById('bilan-wrap').insertAdjacentHTML('beforeend', '<div style="margin-top:8px"><button id="bilan-refresh" class="ghost">Rafraîchir</button></div>');
+          document.getElementById('bilan-refresh').addEventListener('click', bilanPage);
+        } catch (e) { document.getElementById('bilan-wrap').textContent = 'Erreur: ' + e; }
+      }
+
+      async function loadSideBilan() {
+        try {
+          const res = await fetch(BASE + '/bilan/summary');
           const j = await res.json();
-          document.getElementById('fiche-result').textContent = JSON.stringify(j, null, 2);
-          loadSideBilan();
-        } catch(e){ document.getElementById('fiche-result').textContent = String(e); }
-      });
+          document.getElementById('side-bilan').textContent = JSON.stringify(j, null, 2);
+        } catch (e) { document.getElementById('side-bilan').textContent = String(e); }
+      }
 
-      document.getElementById('btn-import-photo').addEventListener('click', ()=>{
-        alert('Endpoint import-photo (multipart) disponible si tu ajoutes le support Multer côté serveur. Voir instructions backend.');
-      });
-    }
+      async function loadPage(name) {
+        currentPage = name;
+        if (pages[name]) await pages[name]();
+        else setContent('<div>Page not found</div>');
+      }
 
-    async function inventoryPage(){
-      setContent('<h2>Inventaire</h2><div id="inv-list">Chargement…</div>');
-      try {
-        const res = await fetch(BASE + '/inventory');
-        const data = await res.json();
-        if(!Array.isArray(data) || data.length===0) document.getElementById('inv-list').innerHTML = '<div>Inventaire vide</div>';
-        else {
-          const html = '<table style="width:100%;border-collapse:collapse"><thead><tr><th>Nom</th><th>Qty</th></tr></thead><tbody>' +
-            data.map(it=>\`<tr><td style="padding:6px;border-top:1px solid #eee">\${escapeHtml(it.name)}</td><td style="padding:6px;border-top:1px solid #eee">\${it.qty}</td></tr>\`).join('') +
-            '</tbody></table>';
-          document.getElementById('inv-list').innerHTML = html;
-        }
-      } catch(e){ document.getElementById('inv-list').textContent = 'Erreur: ' + e; }
-    }
-
-    async function bilanPage(){
-      setContent('<h2>Bilan</h2><div id="bilan-wrap">Chargement…</div>');
-      try {
-        const res = await fetch(BASE + '/bilan/summary');
-        const data = await res.json();
-        document.getElementById('bilan-wrap').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
-        document.getElementById('bilan-wrap').insertAdjacentHTML('beforeend', '<div style="margin-top:8px"><button id="bilan-refresh" class="ghost">Rafraîchir</button></div>');
-        document.getElementById('bilan-refresh').addEventListener('click', bilanPage);
-      } catch(e){ document.getElementById('bilan-wrap').textContent = 'Erreur: ' + e; }
-    }
-
-    async function loadSideBilan(){
-      try {
-        const res = await fetch(BASE + '/bilan/summary');
-        const j = await res.json();
-        document.getElementById('side-bilan').textContent = JSON.stringify(j, null, 2);
-      } catch(e){ document.getElementById('side-bilan').textContent = String(e); }
-    }
-
-    async function loadPage(name){
-      currentPage = name;
-      if(pages[name]) await pages[name]();
-      else setContent('<div>Page not found</div>');
-    }
-
-    // initial
-    (async ()=>{
+      // initial load
       loadPage('merc');
-      await loadSideBilan();
-    })();
+      loadSideBilan();
+    });
   </script>
 </body>
 </html>
