@@ -5,13 +5,17 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { MercModule } from './merc/merc.module';
 
 // modules que nous avons ajoutés
 import { FichesTechniquesModule } from './fiches-techniques/fiches-techniques.module';
 import { UnitesModule } from './unites/unites.module';
 
+import { InventoryModule } from './inventory/inventory.module';
+import { BilanModule } from './bilan/bilan.module';
 @Module({
   imports: [
+    MercModule,
     // Prisma en premier si d'autres modules en dépendent
     PrismaModule,
     UsersModule,
@@ -19,6 +23,8 @@ import { UnitesModule } from './unites/unites.module';
     // nos nouveaux modules métier
     FichesTechniquesModule,
     UnitesModule,
+    InventoryModule,
+    BilanModule,
   ],
   controllers: [AppController],
   providers: [AppService],
