@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { UploadService } from './upload.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -5,7 +7,6 @@ import { BadRequestException } from '@nestjs/common';
 
 describe('UploadService', () => {
   let service: UploadService;
-  let prismaService: PrismaService;
 
   const mockPrismaService = {
     product: {
@@ -36,7 +37,6 @@ describe('UploadService', () => {
     }).compile();
 
     service = module.get<UploadService>(UploadService);
-    prismaService = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {

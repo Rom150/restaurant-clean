@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-require-imports */
 
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -27,7 +27,7 @@ export class UploadService {
       try {
         const pdfData = await pdfParse(file.buffer);
         textContent = pdfData.text;
-      } catch (error) {
+      } catch {
         throw new BadRequestException('Failed to parse PDF file');
       }
     } else if (
@@ -104,7 +104,7 @@ export class UploadService {
   /**
    * Commit parsed items to database
    */
-  async commitParsed(dto: CommitUploadDto, user: any) {
+  async commitParsed(dto: CommitUploadDto, user: { establishmentId?: number }) {
     const { items, targetType, metadata } = dto;
     const etablissementId = metadata?.etablissementId || user.establishmentId;
 
