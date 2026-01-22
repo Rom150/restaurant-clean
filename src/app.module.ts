@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 // modules que nous avons ajoutés
 import { FichesTechniquesModule } from './fiches-techniques/fiches-techniques.module';
 import { UnitesModule } from './unites/unites.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { UnitesModule } from './unites/unites.module';
     // nos nouveaux modules métier
     FichesTechniquesModule,
     UnitesModule,
-  ],
+  
+    UploadModule,],
   controllers: [AppController],
   providers: [AppService],
 })
