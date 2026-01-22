@@ -25,6 +25,29 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+This project includes a Restaurant Management API with features for:
+- User authentication (JWT)
+- Product management
+- Fiche Techniques (recipe cards)
+- Units conversion
+- **Upload API for parsing invoices/recipes (NEW)**
+
+## Project setup
+
+```bash
+$ npm install
+```
+
+## Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/restaurant_db"
+JWT_SECRET="your-secret-key-change-me-in-production"
+ACCESS_TOKEN_EXPIRES_IN="15m"
+```
+
 ## Project setup
 
 ```bash
@@ -34,6 +57,11 @@ $ npm install
 ## Compile and run the project
 
 ```bash
+# Database setup (first time only)
+$ npx prisma migrate dev
+$ npm run seed  # Seed fiches data
+$ npm run seed:upload  # Seed upload sample data
+
 # development
 $ npm run start
 
@@ -55,6 +83,26 @@ $ npm run test:e2e
 
 # test coverage
 $ npm run test:cov
+```
+
+## API Documentation
+
+### Upload API
+
+The Upload API allows parsing and importing invoice/recipe files. See [UPLOAD_API.md](./UPLOAD_API.md) for detailed documentation.
+
+**Quick Example:**
+```bash
+# Parse a PDF file
+curl -X POST http://localhost:3000/upload/parse \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -F "file=@invoice.pdf"
+
+# Commit parsed items
+curl -X POST http://localhost:3000/upload/commit \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"items": [{"name": "Tomatoes", "quantite": 10, "unite": "kg", "prix": 5.50}], "targetType": "mercuriale", "metadata": {"etablissementId": 1}}'
 ```
 
 ## Deployment
