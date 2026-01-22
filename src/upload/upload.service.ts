@@ -6,8 +6,19 @@ import { ParseResponseDto, ParsedItemDto } from './dto/parse-response.dto';
 import { CommitUploadDto } from './dto/commit-upload.dto';
 import * as Tesseract from 'tesseract.js';
 
+export interface CommitResult {
+  success: boolean;
+  createdIds: {
+    products: number[];
+    prix: number[];
+    ficheIngredients: number[];
+  };
+}
+
 @Injectable()
 export class UploadService {
+  private readonly MIN_LINE_LENGTH = 3;
+
   constructor(private prisma: PrismaService) {}
 
   /**
@@ -103,7 +114,7 @@ export class UploadService {
    */
   private extractItemFromLine(line: string): ParsedItemDto | null {
     // Skip lines that are too short or look like headers
-    if (line.length < 3) return null;
+    if (line.length < this.MIN_LINE_LENGTH) return null;
     if (
       /^(produit|product|nom|name|prix|price|quantit|quantity|unit)/i.test(line)
     )
@@ -160,8 +171,8 @@ export class UploadService {
       };
     }
 
-    // Pattern 5: Just a product name (at least 3 chars, no numbers at start)
-    if (!/^\d/.test(line) && line.length >= 3) {
+    // Pattern 5: Just a product name (at least MIN_LINE_LENGTH chars, no numbers at start)
+    if (!/^\d/.test(line) && line.length >= this.MIN_LINE_LENGTH) {
       return {
         name: line.trim(),
         confidence: 0.5,
@@ -174,10 +185,8 @@ export class UploadService {
   /**
    * Commit parsed items to the database
    */
-  async commitParsed(
-    dto: CommitUploadDto,
-  ): Promise<{ success: boolean; createdIds: any }> {
-    const createdIds: any = {
+  async commitParsed(dto: CommitUploadDto): Promise<CommitResult> {
+    const createdIds: CommitResult['createdIds'] = {
       products: [],
       prix: [],
       ficheIngredients: [],
@@ -261,10 +270,11 @@ export class UploadService {
               ingredientId: product.id,
               quantite: item.quantite ?? 1,
               unite: item.unite ?? 'unit',
-              ordre: ordre++,
+              ordre: ordre,
             },
           });
           createdIds.ficheIngredients.push(ficheIngredient.id);
+          ordre += 1;
         }
       }
 
