@@ -25,6 +25,26 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Restaurant Management API
+
+This is a restaurant management backend built with NestJS and Prisma, featuring:
+
+- **Authentication & Authorization:** JWT-based authentication with session management
+- **User Management:** Multi-tenant user system with roles and establishments
+- **Product Management:** Products, pricing, and inventory tracking
+- **Technical Sheets (Fiches Techniques):** Recipe management with cost calculation
+- **Unit Conversion:** Smart unit conversion with mass/volume support
+- **Upload API:** Parse and import invoice/recipe files (PDF, images) - [Documentation](./docs/UPLOAD_API.md)
+
+## Environment Variables
+
+Create a `.env` file in the root directory:
+
+```bash
+DATABASE_URL="postgresql://user:password@localhost:5432/restaurant_db"
+JWT_SECRET="your-secret-key-here"
+```
+
 ## Project setup
 
 ```bash
@@ -50,11 +70,29 @@ $ npm run start:prod
 # unit tests
 $ npm run test
 
+# specific test file
+$ npm run test -- upload.service.spec
+
 # e2e tests
 $ npm run test:e2e
 
 # test coverage
 $ npm run test:cov
+```
+
+## Database Setup
+
+```bash
+# Run Prisma migrations
+$ npx prisma migrate dev
+
+# Generate Prisma Client
+$ npx prisma generate
+
+# Seed sample data
+$ npm run seed              # Seed fiches techniques
+$ npm run seed:upload       # Seed upload sample products
+$ npm run seed:clean        # Clean seed data
 ```
 
 ## Deployment

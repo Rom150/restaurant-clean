@@ -19,7 +19,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "node scripts/seed-fiches.js",
-    "seed:clean": "node scripts/cleanup-seed.js"
+    "seed:clean": "node scripts/cleanup-seed.js",
+    "seed:upload": "node scripts/seed-upload-sample.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -45,6 +46,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^2.0.0",
     "@types/node": "^22.10.7",
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.2",
@@ -53,10 +55,12 @@
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^16.0.0",
     "jest": "^30.0.0",
+    "pdf-parse": "^2.4.5",
     "prettier": "^3.4.2",
     "prisma": "^4.16.2",
     "source-map-support": "^0.5.21",
     "supertest": "^7.0.0",
+    "tesseract.js": "^7.0.0",
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
